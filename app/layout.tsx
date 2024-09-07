@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import HeaderComp from "@/components/headerComp";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -28,11 +29,9 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                <div className="flex justify-center items-center min-h-screen">
-                    <div className="bg-white shadow-lg rounded-lg p-4 w-full max-w-sm sm:max-w-lg">
-                        <h2 className="text-center text-lg font-bold mb-4 bg-black text-white py-4">
-                            Farming-ledger
-                        </h2>
+                <div className="flex flex-col justify-between  h-screen">
+                    <HeaderComp />
+                    <div className="bg-white shadow-lg rounded-lg  w-full  flex-grow overflow-auto">
                         {children}
                     </div>
                 </div>

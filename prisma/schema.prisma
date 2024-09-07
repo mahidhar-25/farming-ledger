@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Farmer {
+  id      String   @id @default(cuid()) // UUID for unique identifier
+  name    String
+  phoneNo String
+  village String
+  ledgers Ledger[]
+
+  createdAt DateTime @default(now()) // Automatically set creation time
+  updatedAt DateTime @updatedAt // Automatically update on record modification
+
+  @@unique([name, village]) // Composite unique constraint for name and village
+}
+
+model Ledger {
+  id           String     @id @default(cuid()) // UUID for unique identifier
+  farmer       Farmer     @relation(fields: [farmerId], references: [id])
+  farmerId     String
+  ledgerBook   LedgerBook @relation(fields: [ledgerBookId], references: [id])
+  ledgerBookId String
+  saleDate     DateTime
+  recieveData  DateTime
+  acres        Float
+  amount       Float
+  dueAmount    Float
+  status       String // completed/pending etc.
+  reciveAmount Float
+  notesSale    String?
+  notesRecieve String?
+
+  createdAt DateTime @default(now()) // Automatically set creation time
+  updatedAt DateTime @updatedAt // Automatically update on record modification
+}
+
+model LedgerBook {
+  id            String   @id @default(cuid()) // UUID for unique identifier
+  name          String
+  perAcreAmount Float
+  ledgers       Ledger[]
+
+  createdAt DateTime @default(now()) // Automatically set creation time
+  updatedAt DateTime @updatedAt // Automatically update on record modification
+}
