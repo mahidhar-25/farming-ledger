@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLedgerStore } from "@/store/ledger";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AddLedger from "./AddLedger";
 import { getLedgerBooks } from "@/app/actions/ledger";
+import axios from "axios";
 
 // Mock data for ledger books (replace with actual data or fetch from an API)
 const ledgerBooks = [
@@ -27,8 +29,9 @@ interface ledgerBookQuery {
 }
 
 export default function LedgerBookDropdown() {
+    const ledgerName = useLedgerStore((state) => state.getLedgerName());
     const router = useRouter();
-    const [selectedLedger, setSelectedLedger] = useState("Select Ledger Book"); // Default label for dropdown
+    const [selectedLedger, setSelectedLedger] = useState(ledgerName); // Default label for dropdown
     const [searchQuery, setSearchQuery] = useState("");
     const [ledgerBooks, setLedgerBooks] = useState<ledgerBookQuery[]>([]);
     const [filteredLedgers, setFilteredLedgers] = useState<ledgerBookQuery[]>(
@@ -55,9 +58,22 @@ export default function LedgerBookDropdown() {
 
         getLedgers();
     }, []);
-    const handleLedgerSelect = (ledgerName: string) => {
+    const handleLedgerSelect = async (ledgerName: string, ledgerId: string) => {
         setSelectedLedger(ledgerName);
-        console.log("Switched to ledger:", ledgerName);
+
+        try {
+            const res = await axios.get(`/api/ledger/${ledgerId}`);
+            const data = await res.data;
+
+            useLedgerStore.getState().setLedgerInfo({
+                ledgerId: data.ledgerId,
+                ledgerName: data.name,
+                ledgerPerAcreAmount: data.perAcreAmount,
+            });
+        } catch (err) {
+            console.log(err);
+        }
+        router.push(`/ledger/${ledgerId}`);
     };
 
     return (
@@ -95,7 +111,10 @@ export default function LedgerBookDropdown() {
                                     <DropdownMenuItem
                                         key={ledger.id}
                                         onSelect={() =>
-                                            handleLedgerSelect(ledger.name)
+                                            handleLedgerSelect(
+                                                ledger.name,
+                                                ledger.id
+                                            )
                                         }
                                     >
                                         {ledger.name}

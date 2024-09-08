@@ -1,84 +1,64 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useLedgerStore } from "@/store/ledger";
+import DatePicker from "./DatePicker";
 
 interface User {
+    id: string;
     name: string;
-    phone: string;
+    phoneNo: string;
     village: string;
 }
 interface SaleData {
+    farmerId: string;
     name: string;
-    phone: string;
+    phoneNo: string;
     village: string;
     acres: number;
     amountPerAcre: number;
     totalAmount: number;
     notes: string;
+    saleDate: Date;
 }
 
-const users: User[] = [
-    { name: "John Doe", phone: "1234567890", village: "Village 1" },
-    { name: "Jane Smith", phone: "2345678901", village: "Village 2" },
-    { name: "Emily Johnson", phone: "3456789012", village: "Village 3" },
-    { name: "Michael Brown", phone: "4567890123", village: "Village 4" },
-    { name: "Linda Davis", phone: "5678901234", village: "Village 5" },
-    { name: "Robert Wilson", phone: "6789012345", village: "Village 1" },
-    { name: "Patricia Moore", phone: "7890123456", village: "Village 2" },
-    { name: "James Taylor", phone: "8901234567", village: "Village 3" },
-    { name: "Barbara Anderson", phone: "9012345678", village: "Village 4" },
-    { name: "William Thomas", phone: "0123456789", village: "Village 5" },
-    { name: "Elizabeth Harris", phone: "1234567891", village: "Village 1" },
-    { name: "David Clark", phone: "2345678902", village: "Village 2" },
-    { name: "Jennifer Lewis", phone: "3456789013", village: "Village 3" },
-    { name: "Charles Walker", phone: "4567890124", village: "Village 4" },
-    { name: "Susan Hall", phone: "5678901235", village: "Village 5" },
-    { name: "Joseph Allen", phone: "6789012346", village: "Village 1" },
-    { name: "Sarah Young", phone: "7890123457", village: "Village 2" },
-    { name: "Daniel King", phone: "8901234568", village: "Village 3" },
-    { name: "Nancy Wright", phone: "9012345679", village: "Village 4" },
-    { name: "Matthew Scott", phone: "0123456790", village: "Village 5" },
-    { name: "Lisa Green", phone: "1234567901", village: "Village 1" },
-    { name: "Mark Adams", phone: "2345678912", village: "Village 2" },
-    { name: "Karen Baker", phone: "3456789023", village: "Village 3" },
-    { name: "Steven Nelson", phone: "4567890134", village: "Village 4" },
-    { name: "Betty Carter", phone: "5678901245", village: "Village 5" },
-    { name: "Paul Mitchell", phone: "6789012356", village: "Village 1" },
-    { name: "Dorothy Perez", phone: "7890123467", village: "Village 2" },
-    { name: "George Roberts", phone: "8901234578", village: "Village 3" },
-    { name: "Helen Campbell", phone: "9012345689", village: "Village 4" },
-    { name: "Andrew Evans", phone: "0123456800", village: "Village 5" },
-    { name: "Jessica Turner", phone: "1234567912", village: "Village 1" },
-    { name: "Ryan Phillips", phone: "2345678923", village: "Village 2" },
-    { name: "Sandra Martinez", phone: "3456789034", village: "Village 3" },
-    { name: "Brian Collins", phone: "4567890145", village: "Village 4" },
-    { name: "Megan Stewart", phone: "5678901356", village: "Village 5" },
-    { name: "Kevin Morris", phone: "6789012467", village: "Village 1" },
-    { name: "Amanda Rogers", phone: "7890123578", village: "Village 2" },
-    { name: "Joshua Reed", phone: "8901234689", village: "Village 3" },
-    { name: "Rachel Cook", phone: "9012345790", village: "Village 4" },
-];
-
-const villages = ["Village 1", "Village 2", "Village 3"];
-
 export default function Form() {
+    const router = useRouter();
     const defaultSaleDate: SaleData = {
+        farmerId: "",
         name: "",
-        phone: "",
+        phoneNo: "",
         village: "",
         acres: 0,
-        amountPerAcre: 0,
+        amountPerAcre: useLedgerStore.getState().ledgerPerAcreAmount,
         totalAmount: 0,
         notes: "",
+        saleDate: new Date(),
     };
     const [formData, setFormData] = useState<SaleData>(defaultSaleDate);
-
+    const [users, setUsers] = useState<User[]>([]);
+    const [villages, setVillages] = useState<string[]>([]);
     const [isExistingUser, setIsExistingUser] = useState(false);
     const [showCreateMessage, setShowCreateMessage] = useState(false);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [filteredVillages, setFilteredVillages] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const users = await axios.get("/api/farmer");
+            console.log(users);
+            setUsers(users.data);
+            setVillages(users.data.map((farmer: any) => farmer.village));
+        };
+
+        const AmountPerAcre = useLedgerStore.getState().ledgerPerAcreAmount;
+        setFormData({ ...formData, amountPerAcre: AmountPerAcre });
+        fetchUsers();
+    }, []);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -101,7 +81,8 @@ export default function Form() {
         const filtered: User[] = users.filter((user) =>
             user.name.toLowerCase().includes(value.toLowerCase())
         );
-        setFilteredUsers(filtered);
+        if (value !== "") setFilteredUsers(filtered);
+        else setFilteredUsers([]);
 
         // Check if the user already exists
         const existingUser = users.find(
@@ -111,8 +92,9 @@ export default function Form() {
         if (existingUser) {
             setFormData({
                 ...formData,
+                farmerId: existingUser.id,
                 name: existingUser.name,
-                phone: existingUser.phone,
+                phoneNo: existingUser.phoneNo,
                 village: existingUser.village,
             });
             setIsExistingUser(true);
@@ -120,12 +102,15 @@ export default function Form() {
         } else {
             setFormData({
                 ...formData,
+                farmerId: "",
                 name: value,
-                phone: "",
+                phoneNo: "",
                 village: "",
             });
-            setIsExistingUser(false);
-            setShowCreateMessage(true);
+            if (value !== "") {
+                setIsExistingUser(false);
+                setShowCreateMessage(true);
+            }
         }
     };
 
@@ -140,14 +125,16 @@ export default function Form() {
         const filtered = villages.filter((village) =>
             village.toLowerCase().includes(value.toLowerCase())
         );
-        setFilteredVillages(filtered);
+        if (value !== "") setFilteredVillages(filtered);
+        else setFilteredVillages([]);
     };
 
     const handleSelectUser = (user: User) => {
         setFormData({
             ...formData,
+            farmerId: user.id,
             name: user.name,
-            phone: user.phone,
+            phoneNo: user.phoneNo,
             village: user.village,
         });
         setIsExistingUser(true);
@@ -168,16 +155,32 @@ export default function Form() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Form submitted", formData);
+        try {
+            const res = await axios.post("/api/ledger", {
+                ...formData,
+                ledgerBookId: useLedgerStore.getState().getLedgerId(),
+            });
+            console.log(res);
+        } catch (err) {
+            console.log(err);
+        }
+
         setIsExistingUser(true);
         setShowCreateMessage(false);
         setFormData(defaultSaleDate);
+        router.back();
+    };
+
+    const handleDateChange = (newDate: Date) => {
+        setFormData({ ...formData, saleDate: newDate });
+        console.log("Selected Date:", newDate);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="relative space-y-4">
+        <form onSubmit={handleSubmit} className="relative space-y-4 m-3">
             {/* Name input */}
             <div className="relative">
                 <label htmlFor="name" className="block text-sm font-medium">
@@ -205,7 +208,7 @@ export default function Form() {
                         ))}
                     </ul>
                 )}
-                {showCreateMessage && (
+                {showCreateMessage && formData.name.length > 0 && (
                     <p className="text-sm text-red-500 mt-2">
                         New user detected, please enter phone number and village
                         details.
@@ -222,7 +225,7 @@ export default function Form() {
                     type="tel"
                     id="phone"
                     name="phone"
-                    value={formData.phone}
+                    value={formData.phoneNo}
                     onChange={handleChange}
                     disabled={isExistingUser}
                     required
@@ -261,59 +264,75 @@ export default function Form() {
             </div>
 
             {/* Acres input */}
-            <div>
-                <label htmlFor="acres" className="block text-sm font-medium">
-                    Number of Acres
-                </label>
-                <Input
-                    type="number"
-                    id="acres"
-                    name="acres"
-                    value={formData.acres}
-                    onChange={handleChange}
-                    onBlur={calculateTotalAmount}
-                    required
-                    className="w-full"
-                />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label
+                        htmlFor="acres"
+                        className="block text-sm font-medium"
+                    >
+                        Number of Acres
+                    </label>
+                    <Input
+                        type="number"
+                        id="acres"
+                        name="acres"
+                        value={formData.acres}
+                        onChange={handleChange}
+                        onBlur={calculateTotalAmount}
+                        required
+                        className="w-full"
+                    />
+                </div>
 
-            {/* Amount per acre input */}
-            <div>
-                <label
-                    htmlFor="amountPerAcre"
-                    className="block text-sm font-medium"
-                >
-                    Amount per Acre
-                </label>
-                <Input
-                    type="number"
-                    id="amountPerAcre"
-                    name="amountPerAcre"
-                    value={formData.amountPerAcre}
-                    onChange={handleChange}
-                    onBlur={calculateTotalAmount}
-                    required
-                    className="w-full"
-                />
-            </div>
+                {/* Amount per acre input */}
+                <div>
+                    <label
+                        htmlFor="amountPerAcre"
+                        className="block text-sm font-medium"
+                    >
+                        Amount per Acre
+                    </label>
+                    <Input
+                        type="number"
+                        id="amountPerAcre"
+                        name="amountPerAcre"
+                        value={formData.amountPerAcre}
+                        onChange={handleChange}
+                        onBlur={calculateTotalAmount}
+                        required
+                        className="w-full"
+                    />
+                </div>
 
-            {/* Total amount (calculated) */}
-            <div>
-                <label
-                    htmlFor="totalAmount"
-                    className="block text-sm font-medium"
-                >
-                    Total Amount
-                </label>
-                <Input
-                    type="number"
-                    id="totalAmount"
-                    name="totalAmount"
-                    value={formData.totalAmount}
-                    onChange={handleChange}
-                    readOnly
-                    className="w-full"
-                />
+                {/* Total amount (calculated) */}
+                <div>
+                    <label
+                        htmlFor="totalAmount"
+                        className="block text-sm font-medium"
+                    >
+                        Total Amount
+                    </label>
+                    <Input
+                        type="number"
+                        id="totalAmount"
+                        name="totalAmount"
+                        value={formData.totalAmount}
+                        onChange={handleChange}
+                        className="w-full"
+                    />
+                </div>
+                <div className="">
+                    <label
+                        htmlFor="saleDate"
+                        className="block text-sm font-medium"
+                    >
+                        Sale Date
+                    </label>
+                    <DatePicker
+                        value={formData.saleDate}
+                        onChange={handleDateChange}
+                    />
+                </div>
             </div>
 
             {/* Notes section */}

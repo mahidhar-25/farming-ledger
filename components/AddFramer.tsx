@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Drawer,
     DrawerTrigger,
@@ -13,23 +13,52 @@ import {
 } from "@/components/ui/drawer"; // Assuming you've added the drawer component from ShadCN
 import { Button } from "@/components/ui/button"; // Button from ShadCN
 import { Input } from "@/components/ui/input"; // Input from ShadCN
-
-// Mock data for villages
-const initialVillages = ["nandavaram", "pandlapuram", "kurnool"];
+import axios from "axios";
 
 export default function AddFarmer() {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [phoneNo, setPhoneNo] = useState("");
     const [village, setVillage] = useState(""); // Single input for village
-    const [villages, setVillages] = useState(initialVillages);
+    const [villages, setVillages] = useState<string[]>([]);
     const [filteredVillages, setFilteredVillages] = useState<string[]>([]);
 
-    const handleSubmit = () => {
-        console.log("Farmer Name:", name);
-        console.log("Phone Number:", phoneNo);
-        console.log("Village:", village);
-        // Add your submit logic here
+    useEffect(() => {
+        const fetchFarmers = async () => {
+            try {
+                const response = await axios.get("/api/farmer");
+                const data = await response.data;
+                if (data) {
+                    setVillages(data.map((farmer: any) => farmer.village));
+                }
+            } catch (error) {
+                console.error("Error fetching farmers:", error);
+            }
+        };
+        fetchFarmers();
+    }, []);
+
+    const handleSubmit = async () => {
+        const farmerData = { name, phoneNo, village };
+
+        try {
+            const response = await axios.post("/api/farmer", farmerData);
+            if (response.status === 201) {
+                const data = response.data;
+                console.log("Farmer created:", data);
+                if (!villages.includes(village)) {
+                    setVillages([...villages, village]);
+                }
+            } else {
+                console.error("Failed to create farmer");
+            }
+        } catch (error) {
+            console.error("Error creating farmer:", error);
+        }
+
+        setName("");
+        setPhoneNo("");
+        setVillage("");
         setOpen(false);
     };
 
@@ -42,15 +71,8 @@ export default function AddFarmer() {
         console.log(updatedVillages);
         // Set the village input as the value typed by the user
         setVillage(inputValue);
-        setFilteredVillages(updatedVillages);
-    };
-
-    const handleAddVillage = () => {
-        if (village && !villages.includes(village)) {
-            // Add village only if it's not already in the list
-            setVillages([...villages, village]);
-        }
-        setOpen(false); // Close the drawer after adding
+        if (inputValue !== "") setFilteredVillages(updatedVillages);
+        else setFilteredVillages([]);
     };
 
     function handleSelectVillage(village: string): void {
@@ -123,7 +145,7 @@ export default function AddFarmer() {
 
                     {/* Footer with Submit Button */}
                     <DrawerFooter>
-                        <Button onClick={handleAddVillage}>Add Farmer</Button>
+                        <Button onClick={handleSubmit}>Add Farmer</Button>
                         <DrawerClose asChild>
                             <Button variant="outline">Cancel</Button>
                         </DrawerClose>

@@ -24,20 +24,21 @@ model Farmer {
 }
 
 model Ledger {
-  id           String     @id @default(cuid()) // UUID for unique identifier
-  farmer       Farmer     @relation(fields: [farmerId], references: [id])
-  farmerId     String
-  ledgerBook   LedgerBook @relation(fields: [ledgerBookId], references: [id])
-  ledgerBookId String
-  saleDate     DateTime
-  recieveData  DateTime
-  acres        Float
-  amount       Float
-  dueAmount    Float
-  status       String // completed/pending etc.
-  reciveAmount Float
-  notesSale    String?
-  notesRecieve String?
+  id            String     @id @default(cuid()) // UUID for unique identifier
+  farmer        Farmer     @relation(fields: [farmerId], references: [id])
+  farmerId      String
+  ledgerBook    LedgerBook @relation(fields: [ledgerBookId], references: [id])
+  ledgerBookId  String
+  saleDate      DateTime
+  recieveDate   DateTime?
+  acres         Float      @default(0)
+  saleamount    Float      @default(0)
+  dueAmount     Float      @default(0)
+  reciveAmount  Float      @default(0)
+  status        String // completed/pending etc.
+  notesSale     String?
+  notesRecieve  String?
+  amountPerAcre Float?
 
   createdAt DateTime @default(now()) // Automatically set creation time
   updatedAt DateTime @updatedAt // Automatically update on record modification
