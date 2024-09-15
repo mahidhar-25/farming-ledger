@@ -3,11 +3,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Checkbox } from "./ui/checkbox";
 
 interface FilterPopoverProps {
+    filters: string[];
     selectedFilters: string[];
     onFilterChange: (filters: string[]) => void;
 }
 
 const FilterPopover: React.FC<FilterPopoverProps> = ({
+    filters,
     selectedFilters,
     onFilterChange,
 }) => {
@@ -22,18 +24,17 @@ const FilterPopover: React.FC<FilterPopoverProps> = ({
         );
     };
 
-    useEffect(() => {
-        setLocalFilters(selectedFilters);
-    }, [selectedFilters]);
+    // useEffect(() => {
+    //     setLocalFilters(selectedFilters);
+    // }, [selectedFilters]);
 
     useEffect(() => {
         if (!isOpen) {
-            // Handle filter change when popover closes
             onFilterChange(localFilters);
         }
-    }, [isOpen, localFilters, onFilterChange]);
+    }, [isOpen]);
 
-    const options = ["Name", "Village", "Completed", "Pending"];
+    const options = filters;
 
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>

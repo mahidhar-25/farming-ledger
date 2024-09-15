@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 interface DashboardCardProps {
     title: string;
-    value: string;
+    value: string | number;
     routePath?: string;
     textcolor: string;
 }

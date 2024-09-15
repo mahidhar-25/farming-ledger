@@ -13,6 +13,8 @@ import {
 } from "./ui/select";
 import axios from "axios";
 import { useLedgerStore } from "@/store/ledger";
+import FarmerAccordian from "./FarmerAccordian";
+import { useRouter } from "next/navigation";
 
 interface User {
     id: string;
@@ -29,6 +31,7 @@ interface ReceiveData {
 }
 
 export default function Form() {
+    const router = useRouter();
     const defaultReceiveDate: ReceiveData = {
         name: "",
         totalAmount: 0,
@@ -41,6 +44,7 @@ export default function Form() {
     const [showCreateMessage, setShowCreateMessage] = useState(false);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [existingUserId, setExistingUserId] = useState("");
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -58,15 +62,6 @@ export default function Form() {
             ...formData,
             totalAmount: Number(amount),
         });
-    };
-
-    const getFarmerTransactions = async (
-        farmerId: string,
-        ledgerId: string
-    ) => {
-        const response = await axios.get(`/api/farmer/${ledgerId}/${farmerId}`);
-        const data = await response.data;
-        console.log(data);
     };
 
     const handleChange = (
@@ -106,8 +101,7 @@ export default function Form() {
             });
             setIsExistingUser(true);
             setShowCreateMessage(false);
-            const ledgerId = useLedgerStore.getState().getLedgerId();
-            await getFarmerTransactions(existingUser.id, ledgerId);
+            setExistingUserId(existingUser.id);
         } else {
             setFormData({
                 ...formData,
@@ -123,8 +117,7 @@ export default function Form() {
             ...formData,
             name: user.name,
         });
-        const ledgerId = useLedgerStore.getState().getLedgerId();
-        await getFarmerTransactions(user.id, ledgerId);
+        setExistingUserId(user.id);
         setIsExistingUser(true);
         setFilteredUsers([]);
         setShowCreateMessage(false);
@@ -134,12 +127,21 @@ export default function Form() {
         setFormData({ ...formData, recieveDate: newDate });
         console.log("Selected Date:", newDate);
     };
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Form submitted", formData);
-        setIsExistingUser(true);
-        setShowCreateMessage(false);
-        setFormData(defaultReceiveDate);
+        const ledgerd = useLedgerStore.getState().getLedgerId();
+        const res = await axios.post(
+            `/api/farmer/${ledgerd}/${existingUserId}`,
+            {
+                formData,
+            }
+        );
+        if (res.status === 201) {
+            setIsExistingUser(true);
+            setShowCreateMessage(false);
+            setFormData(defaultReceiveDate);
+            router.back();
+        }
     };
 
     return (
@@ -177,6 +179,8 @@ export default function Form() {
                     </p>
                 )}
             </div>
+
+            {isExistingUser && <FarmerAccordian farmerId={existingUserId} />}
 
             {/* Total amount (calculated) */}
             <div>

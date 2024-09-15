@@ -49,13 +49,13 @@ export default function DashBoard() {
                     console.log(data);
                     if (
                         data.dueAmount !== null &&
-                        data.recievedAmount !== null &&
+                        data.reciveAmount !== null &&
                         data.saleAmount !== null &&
                         data.acres !== null
                     ) {
                         setDashboardData({
                             dueAmount: data.dueAmount || 0,
-                            recievedAmount: data.recievedAmount || 0,
+                            recievedAmount: data.reciveAmount || 0,
                             saleAmount: data.saleamount || 0,
                             acres: data.acres || 0,
                         });
